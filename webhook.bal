@@ -22,11 +22,13 @@ type User record {|
 service asgardeo:RegistrationService on webhookListener {
   
     remote function onAddUser(asgardeo:AddUserEvent event ) returns error? {
+      log:printInfo("LOCAL USER : " + event.toJsonString());
+      
+    }
+    remote function onConfirmSelfSignup(asgardeo:GenericEvent event ) returns error? {
       log:printInfo(event.toJsonString());
       json __user = event.toJson();
       string userNameStr  = check __user.eventData.userName;
-      log:printInfo(userNameStr);
-      
       http:Client http_Client = check new (_endUrl, 
         auth = {
                 tokenUrl: _tokenUrl,
@@ -34,13 +36,10 @@ service asgardeo:RegistrationService on webhookListener {
                 clientSecret: _clientSecret
         });
 
-        User _ = check http_Client->/user.post({
+        anydata|http:ClientError unionResult = check http_Client->/user.post({
             userName: userNameStr,
             allowAccess: 0
         });
-    }
-    remote function onConfirmSelfSignup(asgardeo:GenericEvent event ) returns error? {
-      log:printInfo(event.toJsonString());
     }
     remote function onAcceptUserInvite(asgardeo:GenericEvent event ) returns error? {
       log:printInfo(event.toJsonString());
